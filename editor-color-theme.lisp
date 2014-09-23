@@ -10,9 +10,7 @@
 
 (defpackage #:editor-color-theme
   (:use #:cl)
-  (:export #:*foreground-color*
-	   #:*background-color*
-	   #:all-color-themes
+  (:export #:all-color-themes
 	   #:color-theme-args
 	   #:color-theme
 	   #:define-color-theme
@@ -28,16 +26,15 @@
 
 (defvar *background-color* nil)
 
+(defconstant +default-parenthesis-font-face-colours+ '(:red :black :darkgreen :darkorange3 :blue :purple))
 
 ;;; Implementation
 
 (defvar *all-color-themes* (make-hash-table :test 'string=))
 
 (defun all-color-themes ()
-  (maphash #'(lambda (key value)
-	       (declare (ignore value))
-	       key)
-	   *all-color-themes*))
+  (loop for key being the hash-keys in *all-color-themes*
+        collect key))
 
 (defun color-theme-data (theme-name)
   (multiple-value-bind (color-theme-data found?)
@@ -96,6 +93,11 @@
     
     (setf *foreground-color* (or foreground :color_windowtext))
     (setf *background-color* (or background :color_window))
+
+    (lw:when-let (parenthesis-colors
+                  (getf color-theme-args :parenthesis-font-face-colours
+                        +default-parenthesis-font-face-colours+))
+      (editor::set-parenthesis-colours parenthesis-colors))
   
     (dolist (name *editor-face-names*)
       (let* ((color-theme-args-for-face (getf color-theme-args name))
@@ -239,6 +241,101 @@
   :compiler-note-highlight '(:foreground :magenta)
   :compiler-warning-highlight '(:foreground :orange)
   :compiler-error-highlight '(:foreground :red))
+
+
+(defun make-rgb (red green blue &optional alpha)
+  (color:make-rgb (/ red 255s0)
+                  (/ green 255s0)
+                  (/ blue 255s0)
+                  (and alpha (/ alpha 255s0))))
+
+(defvar *solarized-color-table*
+  '(:solarized-base03  (#x00 #x2b #x36)
+    :solarized-base02  (#x07 #x36 #x42)
+    :solarized-base01  (#x58 #x6e #x75)
+    :solarized-base00  (#x65 #x7b #x83)
+    :solarized-base0   (#x83 #x94 #x96)
+    :solarized-base1   (#x93 #xa1 #xa1)
+    :solarized-base2   (#xee #xe8 #xd5)
+    :solarized-base3   (#xfd #xf6 #xe3)
+    :solarized-yellow  (#xb5 #x89 #x00)
+    :solarized-orange  (#xcb #x4b #x16)
+    :solarized-red     (#xdc #x32 #x2f)
+    :solarized-magenta (#xd3 #x36 #x82)
+    :solarized-violet  (#x6c #x71 #xc4)
+    :solarized-blue    (#x26 #x8b #xd2)
+    :solarized-cyan    (#x2a #xa1 #x98)
+    :solarized-green   (#x85 #x99 #x00)))
+
+(loop for list on *solarized-color-table* by #'cddr
+      for name = (first list)
+      for rgb = (second list)
+      do
+      (color:define-color-alias
+       name
+       (apply #'make-rgb rgb)))
+
+(define-color-theme "solarized-light" ()
+  :foreground :solarized-base00
+  :background :solarized-base3
+  :region '(:foreground :solarized-base1
+            :background :solarized-base3
+            :inverse-p t)
+  :highlight '(:background :solarized-base2)
+  :font-lock-function-name-face '(:foreground :solarized-blue)
+  :font-lock-comment-face '(:foreground :solarized-base1 :italic-p t)
+  :font-lock-type-face '(:foreground :solarized-yellow)
+  :font-lock-variable-name-face '(:foreground :solarized-blue)
+  :font-lock-string-face '(:foreground :solarized-cyan)
+  :font-lock-keyword-face '(:foreground :solarized-green)
+  :font-lock-builtin-face '(:foreground :solarized-green)
+  :compiler-note-highlight '(:foreground :solarized-green
+                             :bold-p t)
+  :compiler-warning-highlight '(:foreground :solarized-orange
+                                :bold-p t)
+  :compiler-error-highlight '(:foreground :solarized-red
+                              :inverse-p t)
+  :show-point-face '(:foreground :solarized-cyan
+                     :bold-p t :inverse-p t)
+  :interactive-input-face '(:foreground :solarized-red)
+  :non-focus-complete-face '(:background :solarized-base3)
+  :parenthesis-font-face-colours '(:solarized-red
+                                   :solarized-base01
+                                   :solarized-green
+                                   :solarized-orange
+                                   :solarized-blue
+                                   :solarized-magenta))
+
+(define-color-theme "solarized-dark" ()
+  :foreground :solarized-base0
+  :background :solarized-base03
+  :region '(:foreground :solarized-base01
+            :background :solarized-base03
+            :inverse-p t)  
+  :highlight '(:background :solarized-base02)
+  :font-lock-function-name-face '(:foreground :solarized-blue)
+  :font-lock-comment-face '(:foreground :solarized-base01 :italic-p t)
+  :font-lock-type-face '(:foreground :solarized-yellow)
+  :font-lock-variable-name-face '(:foreground :solarized-blue)
+  :font-lock-string-face '(:foreground :solarized-cyan)
+  :font-lock-keyword-face '(:foreground :solarized-green)
+  :font-lock-builtin-face '(:foreground :solarized-green)
+  :compiler-note-highlight '(:foreground :solarized-green
+                             :bold-p t)
+  :compiler-warning-highlight '(:foreground :solarized-orange
+                                :bold-p t)
+  :compiler-error-highlight '(:foreground :solarized-red
+                              :inverse-p t)
+  :show-point-face '(:foreground :solarized-cyan
+                     :bold-p t :inverse-p t)
+  :interactive-input-face '(:foreground :solarized-red)
+  :non-focus-complete-face '(:background :solarized-base03)
+  :parenthesis-font-face-colours '(:solarized-red
+                                   :solarized-base1
+                                   :solarized-green
+                                   :solarized-orange
+                                   :solarized-blue
+                                   :solarized-magenta))
 
 
 ;;; Show presence when loaded
