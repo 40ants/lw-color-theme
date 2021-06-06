@@ -6,18 +6,15 @@
 
 ;;; Interface
 
-(cl:in-package #:cl-user)
-
-(defpackage #:editor-color-theme
+(defpackage #:lw-color-theme
   (:use #:cl)
+  (:nicknames #:lw-color-theme/theme)
   (:export #:all-color-themes
 	   #:color-theme-args
 	   #:color-theme
 	   #:define-color-theme
-	   #:remove-color-theme
-	   ))
-
-(in-package #:editor-color-theme)
+	   #:remove-color-theme))
+(in-package #:lw-color-theme)
 
 
 ;;; Configuration
