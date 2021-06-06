@@ -49,9 +49,22 @@
 (defvar *all-editor-panes* (make-hash-table :test 'eq
 					    :weak-kind :key))
 
+
+;; Previosly, this system used :color_windowtext,
+;; but in Lispworks 7.1 it is absent.
+(defvar *default-window-text*
+  (color:make-rgb 0.0 0.0 0.0
+                  0.847))
+;; Previously :color_window was used
+(defvar *default-window-background*
+  (color:make-rgb 1.0 1.0 1.0))
+
+
 (defun update-editor-pane (pane)
-  (setf (capi:simple-pane-foreground pane) (or *foreground-color* :color_windowtext))
-  (setf (capi:simple-pane-background pane) (or *background-color* :color_window))
+  (setf (capi:simple-pane-foreground pane) (or *foreground-color*
+                                               *default-window-text*))
+  (setf (capi:simple-pane-background pane) (or *background-color*
+                                               *default-window-background*))
   
   (let ((recolorize-p (editor::buffer-font-lock-mode-p (capi:editor-pane-buffer pane))))
     (when recolorize-p
@@ -88,8 +101,10 @@
 		       &key foreground background &allow-other-keys)
       (color-theme-args theme-name)
     
-    (setf *foreground-color* (or foreground :color_windowtext))
-    (setf *background-color* (or background :color_window))
+    (setf *foreground-color* (or foreground
+                                 *default-window-text*))
+    (setf *background-color* (or background
+                                 *default-window-background*))
 
     (lw:when-let (parenthesis-colors
                   (getf color-theme-args :parenthesis-font-face-colours
